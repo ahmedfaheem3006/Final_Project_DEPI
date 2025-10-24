@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد صوتي احترافي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="w-full h-screen">
+
+    <div id="avatar-container"></div>
+
+    <main id="ui-container" class="w-full h-screen flex flex-col justify-between p-4">
+        
+        <div class="absolute top-4 right-4 z-20">
+            <button id="theme-toggle-button" class="h-10 w-10 rounded-full bg-gray-700/80 p-2 text-white hover:bg-gray-600 transition-all">
+                <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-6.364-.386 1.591-1.591M3 12h2.25m.386-6.364 1.591 1.591" />
+                </svg>
+                <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 hidden">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25c0 5.385 4.365 9.75 9.75 9.75 3.974 0 7.404-2.368 8.998-5.998Z" />
+                </svg>
+            </button>
+        </div>
+
+        <div></div>
+
+        <div class="relative w-full max-w-2xl mx-auto flex-1 flex flex-col justify-end">
+            <div id="chat-history" class="max-h-80 overflow-y-auto pr-4">
+                <div class="flex flex-col space-y-4">
+                     <div class="flex justify-start">
+                        <div class="chat-bubble assistant">مرحباً! كيف يمكنني مساعدتك اليوم؟</div>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <form id="chat-form" class="relative w-full max-w-2xl mx-auto">
+            <div class="relative border border-gray-700 rounded-lg bg-gray-900/60 backdrop-blur-md shadow-sm">
+                <textarea id="text-prompt-input" class="w-full rounded-md border-0 py-4 pl-24 pr-4 text-base bg-transparent placeholder:text-gray-500 focus:ring-0 resize-none" placeholder="اسألني أي شيء..." rows="1"></textarea>
+                <div class="absolute left-3 bottom-3 flex items-center gap-2">
+                    <button id="mic-button" class="mic-button inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-700/80 hover:bg-gray-600 transition-all" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+                    </button>
+                    <button id="send-text-button" class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50" type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg>
+                    </button>
+                </div>
+            </div>
+             <p id="status" class="h-5 mt-2 text-center text-sm text-gray-400">&nbsp;</p>
+        </form>
+    </main>
+    
+    <script type="module" src="script.js"></script>
+</body>
+</html>
