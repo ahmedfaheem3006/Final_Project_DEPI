@@ -6,6 +6,11 @@ body {
     transition: background 0.5s, color 0.5s;
 }
 
+.logo {
+    font-size: 45px;
+    font-weight: bold;
+}
+
 #avatar-container {
     position: absolute;
     top: 0;
@@ -21,31 +26,50 @@ body {
 }
 
 .chat-bubble {
-    max-width: 85%; 
-    padding: 12px 18px; 
+    max-width: 85%;
+    padding: 12px 18px;
     border-radius: 20px;
-    line-height: 1.6; 
+    line-height: 1.6;
     word-wrap: break-word;
-    transition: background-color 0.5s, color 0.5s;
+    /* transition: background-color 0.5s, color 0.5s; */
 }
+
 .chat-bubble.user {
-    background-color: #3B82F6; /* blue-500 */
-    color: white; 
-    border-bottom-right-radius: 4px; 
+    background-color: #3B82F6;
+    /* blue-500 */
+    color: white;
+    border-bottom-right-radius: 4px;
 }
+
 .chat-bubble.assistant {
-    background-color: #374151; /* gray-700 */
-    color: #F3F4F6; /* gray-100 */
-    border-bottom-left-radius: 4px; 
+    background-color: #374151;
+    /* gray-700 */
+    color: #F3F4F6;
+    /* gray-100 */
+    border-bottom-left-radius: 4px;
 }
+
 #chat-history {
     mask-image: linear-gradient(to top, transparent, black 20%, black 100%);
     -webkit-mask-image: linear-gradient(to top, transparent, black 20%, black 100%);
 }
-#chat-history::-webkit-scrollbar { width: 6px; }
-#chat-history::-webkit-scrollbar-track { background: transparent; }
-#chat-history::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
-#chat-history::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+
+#chat-history::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat-history::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#chat-history::-webkit-scrollbar-thumb {
+    background: #4B5563;
+    border-radius: 3px;
+}
+
+#chat-history::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+}
 
 .mic-button.is-listening {
     transform: scale(1.1);
@@ -57,45 +81,148 @@ body.light-mode {
     background: linear-gradient(180deg, #a7c5eb 0%, #ffffff 100%);
     color: #111827;
 }
+
 body.light-mode .chat-bubble.assistant {
-    background-color: #E5E7EB; /* gray-200 */
-    color: #1F2937; /* gray-800 */
+    background-color: #E5E7EB;
+    /* gray-200 */
+    color: #1F2937;
+    /* gray-800 */
 }
+
 body.light-mode #chat-history {
     mask-image: linear-gradient(to top, transparent, black 15%, black 100%);
     -webkit-mask-image: linear-gradient(to top, transparent, black 15%, black 100%);
 }
-body.light-mode #chat-history::-webkit-scrollbar-thumb { background: #9CA3AF; } /* gray-400 */
-body.light-mode #chat-history::-webkit-scrollbar-thumb:hover { background: #6B7280; } /* gray-500 */
+
+body.light-mode #chat-history::-webkit-scrollbar-thumb {
+    background: #9CA3AF;
+}
+
+/* gray-400 */
+body.light-mode #chat-history::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+}
+
+/* gray-500 */
 
 /* Input Form */
-body.light-mode #chat-form > div {
-    border-color: #D1D5DB; /* gray-300 */
-    background-color: rgba(255, 255, 255, 0.6); /* white/60 */
-    backdrop-blur: 8px; /* تم تقليل البلور قليلاً */
+body.light-mode #chat-form>div {
+    border-color: #D1D5DB;
+    /* gray-300 */
+    background-color: rgba(255, 255, 255, 0.6);
+    /* white/60 */
+    backdrop-filter: blur(8px);
+    /* تم تقليل البلور قليلاً */
 }
+
 body.light-mode #text-prompt-input {
     color: #111827;
 }
+
 body.light-mode #text-prompt-input::placeholder {
-    color: #6B7280; /* gray-500 */
+    color: #6B7280;
+    /* gray-500 */
 }
+
 body.light-mode #mic-button {
-    background-color: rgba(229, 231, 235, 0.8); /* gray-200/80 */
+    background-color: rgba(229, 231, 235, 0.8);
+    /* gray-200/80 */
     color: #1F2937;
 }
+
 body.light-mode #mic-button:hover {
-    background-color: #D1D5DB; /* gray-300 */
+    background-color: #D1D5DB;
+    /* gray-300 */
 }
+
 body.light-mode #status {
-    color: #4B5563; /* gray-600 */
+    color: #4B5563;
+    /* gray-600 */
 }
 
 /* Toggle Button */
 body.light-mode #theme-toggle-button {
-    background-color: rgba(255, 255, 255, 0.8); /* white/80 */
+    background-color: rgba(255, 255, 255, 0.8);
+    /* white/80 */
     color: #1F2937;
 }
+
 body.light-mode #theme-toggle-button:hover {
     background-color: #f0f0f0;
+}
+
+/* --- RTL Support --- */
+[dir="rtl"] .chat-bubble.user {
+    border-bottom-right-radius: 20px;
+    border-bottom-left-radius: 4px;
+}
+
+[dir="rtl"] .chat-bubble.assistant {
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 4px;
+}
+
+/* --- Chat History Sidebar --- */
+#history-sidebar {
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    border-right: 1px solid #374151;
+}
+
+#chat-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#chat-list::-webkit-scrollbar-thumb {
+    background: #4B5563;
+    border-radius: 3px;
+}
+
+#chat-list::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+}
+
+/* Light Mode Sidebar */
+body.light-mode #history-sidebar {
+    background-color: rgba(249, 250, 251, 0.95);
+    border-color: #D1D5DB;
+}
+
+body.light-mode #history-sidebar h2 {
+    color: #111827;
+}
+
+body.light-mode #history-sidebar #close-sidebar {
+    color: #6B7280;
+}
+
+body.light-mode #history-sidebar #close-sidebar:hover {
+    color: #111827;
+}
+
+body.light-mode #chat-list .group {
+    background-color: #F3F4F6;
+}
+
+body.light-mode #chat-list .group:hover {
+    background-color: #E5E7EB;
+}
+
+body.light-mode #chat-list .group.bg-blue-600 {
+    background-color: #3B82F6 !important;
+}
+
+body.light-mode #chat-list .text-gray-400 {
+    color: #9CA3AF;
+}
+
+body.light-mode #chat-list::-webkit-scrollbar-thumb {
+    background: #9CA3AF;
+}
+
+body.light-mode #chat-list::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
 }

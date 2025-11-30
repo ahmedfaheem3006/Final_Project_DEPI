@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interior Design API - Web Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        textarea,
+        select,
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.queued {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.processing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .result {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result img,
+        .result video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .download-btn {
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Interior Design API</h1>
+            <p>Generate stunning interior design images and videos from text</p>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('pipeline')">Complete Pipeline</button>
+                <button class="tab" onclick="switchTab('image')">Image Only</button>
+                <button class="tab" onclick="switchTab('video')">Video Only</button>
+            </div>
+
+            <!-- Complete Pipeline Tab -->
+            <div id="pipeline-tab" class="tab-content active">
+                <h2>Text → Image → Video</h2>
+                <p style="margin-bottom: 20px; color: #666;">Generate both image and video from a text description</p>
+                
+                <form id="pipeline-form">
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="pipeline-prompt" placeholder="e.g., luxury living room, modern sofa, wooden coffee table, large windows, plants">luxury living room, modern sofa, wooden coffee table, large windows, warm lighting</textarea>
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Room Type</label>
+                            <select id="pipeline-room">
+                                <option value="living_room">Living Room</option>
+                                <option value="bedroom">Bedroom</option>
+                                <option value="kitchen">Kitchen</option>
+                                <option value="bathroom">Bathroom</option>
+                                <option value="office">Office</option>
+                                <option value="dining_room">Dining Room</option>
+                                <option value="exterior">Exterior</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Motion Style</label>
+                            <select id="pipeline-motion">
+                                <option value="subtle">Subtle</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="dynamic">Dynamic</option>
+                                <option value="showcase">Showcase</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button">Generate Image & Video</button>
+                </form>
+
+                <div id="pipeline-status" class="status">
+                    <div id="pipeline-message"></div>
+                    <div class="progress-bar">
+                        <div id="pipeline-progress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="pipeline-result" class="result">
+                    <h3>Generated Image</h3>
+                    <img id="pipeline-image" alt="Generated image">
+                    <a id="pipeline-image-download" class="download-btn" download>Download Image</a>
+
+                    <h3 style="margin-top: 30px;">Generated Video</h3>
+                    <video id="pipeline-video" controls></video>
+                    <br>
+                    <a id="pipeline-video-download" class="download-btn" download>Download Video</a>
+                </div>
+            </div>
+
+            <!-- Image Only Tab -->
+            <div id="image-tab" class="tab-content">
+                <h2>Generate Image</h2>
+                <p style="margin-bottom: 20px; color: #666;">Create an interior design image from text</p>
+                
+                <form id="image-form">
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="image-prompt" placeholder="Describe your interior design...">modern bedroom, king size bed, warm lighting, wooden furniture</textarea>
+                    </div>
+
+                    <button type="submit" class="button">Generate Image</button>
+                </form>
+
+                <div id="image-status" class="status">
+                    <div id="image-message"></div>
+                    <div class="progress-bar">
+                        <div id="image-progress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="image-result" class="result">
+                    <img id="image-output" alt="Generated image">
+                    <br>
+                    <a id="image-download" class="download-btn" download>Download Image</a>
+                </div>
+            </div>
+
+            <!-- Video Only Tab -->
+            <div id="video-tab" class="tab-content">
+                <h2>Generate Video</h2>
+                <p style="margin-bottom: 20px; color: #666;">Upload an image to create a video</p>
+                
+                <form id="video-form">
+                    <div class="form-group">
+                        <label>Upload Image</label>
+                        <input type="file" id="video-image" accept="image/*" required>
+                    </div>
+
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Room Type</label>
+                            <select id="video-room">
+                                <option value="living_room">Living Room</option>
+                                <option value="bedroom">Bedroom</option>
+                                <option value="kitchen">Kitchen</option>
+                                <option value="bathroom">Bathroom</option>
+                                <option value="office">Office</option>
+                                <option value="dining_room">Dining Room</option>
+                                <option value="exterior">Exterior</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Motion Style</label>
+                            <select id="video-motion">
+                                <option value="subtle">Subtle</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="dynamic">Dynamic</option>
+                                <option value="showcase">Showcase</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button">Generate Video</button>
+                </form>
+
+                <div id="video-status" class="status">
+                    <div id="video-message"></div>
+                    <div class="progress-bar">
+                        <div id="video-progress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="video-result" class="result">
+                    <video id="video-output" controls></video>
+                    <br>
+                    <a id="video-download" class="download-btn" download>Download Video</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        // Complete Pipeline
+        document.getElementById('pipeline-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('pipeline-prompt').value;
+            const roomType = document.getElementById('pipeline-room').value;
+            const motionStyle = document.getElementById('pipeline-motion').value;
+
+            const statusEl = document.getElementById('pipeline-status');
+            const messageEl = document.getElementById('pipeline-message');
+            const progressEl = document.getElementById('pipeline-progress');
+            const resultEl = document.getElementById('pipeline-result');
+
+            statusEl.className = 'status show queued';
+            messageEl.textContent = 'Starting generation...';
+            progressEl.style.width = '0%';
+            resultEl.classList.remove('show');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/generate/image-to-video`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        room_type: roomType,
+                        motion_style: motionStyle
+                    })
+                });
+
+                const data = await response.json();
+                pollStatus('pipeline', data.job_id);
+            } catch (error) {
+                statusEl.className = 'status show failed';
+                messageEl.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // Image Only
+        document.getElementById('image-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('image-prompt').value;
+
+            const statusEl = document.getElementById('image-status');
+            const messageEl = document.getElementById('image-message');
+            const progressEl = document.getElementById('image-progress');
+            const resultEl = document.getElementById('image-result');
+
+            statusEl.className = 'status show queued';
+            messageEl.textContent = 'Starting generation...';
+            progressEl.style.width = '0%';
+            resultEl.classList.remove('show');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/generate/image`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                pollStatus('image', data.job_id);
+            } catch (error) {
+                statusEl.className = 'status show failed';
+                messageEl.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // Video Only
+        document.getElementById('video-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = document.getElementById('video-image').files[0];
+            const roomType = document.getElementById('video-room').value;
+            const motionStyle = document.getElementById('video-motion').value;
+
+            const statusEl = document.getElementById('video-status');
+            const messageEl = document.getElementById('video-message');
+            const progressEl = document.getElementById('video-progress');
+            const resultEl = document.getElementById('video-result');
+
+            statusEl.className = 'status show queued';
+            messageEl.textContent = 'Starting generation...';
+            progressEl.style.width = '0%';
+            resultEl.classList.remove('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('room_type', roomType);
+                formData.append('motion_style', motionStyle);
+
+                const response = await fetch(`${API_BASE}/api/v1/generate/video`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                pollStatus('video', data.job_id);
+            } catch (error) {
+                statusEl.className = 'status show failed';
+                messageEl.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        async function pollStatus(type, jobId) {
+            const statusEl = document.getElementById(`${type}-status`);
+            const messageEl = document.getElementById(`${type}-message`);
+            const progressEl = document.getElementById(`${type}-progress`);
+            const resultEl = document.getElementById(`${type}-result`);
+
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/v1/status/${jobId}`);
+                    const status = await response.json();
+
+                    statusEl.className = `status show ${status.status}`;
+                    messageEl.textContent = status.message;
+                    progressEl.style.width = `${status.progress}%`;
+
+                    if (status.status === 'completed') {
+                        clearInterval(interval);
+                        
+                        if (type === 'pipeline') {
+                            document.getElementById('pipeline-image').src = `${API_BASE}${status.image_url}`;
+                            document.getElementById('pipeline-video').src = `${API_BASE}${status.video_url}`;
+                            document.getElementById('pipeline-image-download').href = `${API_BASE}${status.image_url}`;
+                            document.getElementById('pipeline-video-download').href = `${API_BASE}${status.video_url}`;
+                        } else if (type === 'image') {
+                            document.getElementById('image-output').src = `${API_BASE}${status.image_url}`;
+                            document.getElementById('image-download').href = `${API_BASE}${status.image_url}`;
+                        } else if (type === 'video') {
+                            document.getElementById('video-output').src = `${API_BASE}${status.video_url}`;
+                            document.getElementById('video-download').href = `${API_BASE}${status.video_url}`;
+                        }
+
+                        resultEl.classList.add('show');
+                    } else if (status.status === 'failed') {
+                        clearInterval(interval);
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    statusEl.className = 'status show failed';
+                    messageEl.textContent = `Error: ${error.message}`;
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
