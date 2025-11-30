@@ -1,10 +1,18 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+# from flask_cors import CORS # Removed to avoid installation issues
 import main
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# CORS(app) # Removed
+
+# Manual CORS handling
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -60,6 +68,42 @@ def clear():
     try:
         main.clear_chat()
         return jsonify({"status": "success", "message": "Chat cleared"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/save-image', methods=['POST'])
+def save_image():
+    try:
+        data = request.json
+        image_url = data.get('image_url')
+        
+        if not image_url:
+            return jsonify({"error": "No image URL provided"}), 400
+            
+        # Create directory if not exists
+        save_dir = "generated_images"
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+            
+        # Generate filename
+        import time
+        import requests
+        filename = f"design_{int(time.time())}.jpg"
+        filepath = os.path.join(save_dir, filename)
+        
+        # Download and save
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            with open(filepath, 'wb') as f:
+                f.write(response.content)
+            return jsonify({
+                "status": "success", 
+                "message": "Image saved successfully",
+                "path": os.path.abspath(filepath)
+            })
+        else:
+            return jsonify({"error": "Failed to download image"}), 500
+            
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

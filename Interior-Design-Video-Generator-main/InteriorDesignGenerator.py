@@ -152,13 +152,13 @@ class InteriorVideoGenerator:
         self.pipe = None
         
         self.room_settings = {
-            "living_room": {"motion": 85, "frames": 16, "fps": 7},
+            "living_room": {"motion": 85, "frames": 14, "fps": 7},
             "bedroom": {"motion": 70, "frames": 14, "fps": 6},
-            "kitchen": {"motion": 95, "frames": 18, "fps": 8},
+            "kitchen": {"motion": 95, "frames": 14, "fps": 8},
             "bathroom": {"motion": 75, "frames": 14, "fps": 6},
-            "office": {"motion": 80, "frames": 16, "fps": 7},
-            "dining_room": {"motion": 90, "frames": 16, "fps": 7},
-            "exterior": {"motion": 100, "frames": 20, "fps": 8}
+            "office": {"motion": 80, "frames": 14, "fps": 7},
+            "dining_room": {"motion": 90, "frames": 14, "fps": 7},
+            "exterior": {"motion": 100, "frames": 14, "fps": 8}
         }
         
         self.motion_styles = {
@@ -225,6 +225,7 @@ class InteriorVideoGenerator:
         video_frames = self.pipe(
             image,
             num_frames=num_frames,
+            num_inference_steps=10, # Reduced for speed
             motion_bucket_id=motion_bucket,
             fps=fps,
             decode_chunk_size=2,
@@ -483,6 +484,11 @@ async def generate_video(
         "message": "Job queued",
         "created_at": datetime.now().isoformat()
     }
+    
+    # Video Generation Settings
+    VIDEO_NUM_FRAMES = 14  # Reduced from 25 for faster CPU generation
+    VIDEO_DECODE_CHUNK_SIZE = 2 # Reduced for memory efficiency
+    VIDEO_STEPS = 10 # Reduced from 25 for speed
     
     request = VideoGenerationRequest(
         room_type=room_type,

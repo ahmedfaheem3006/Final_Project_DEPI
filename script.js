@@ -131,7 +131,11 @@ function loadChatMessages(chatId) {
         messageWrapper.className = `flex justify-${msg.sender === 'user' ? 'end' : 'start'}`;
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${msg.sender}`;
-        bubble.textContent = msg.text;
+        if (msg.text.includes('<img')) {
+            bubble.innerHTML = msg.text;
+        } else {
+            bubble.textContent = msg.text;
+        }
         messageWrapper.appendChild(bubble);
         chatHistoryContent.appendChild(messageWrapper);
     });
@@ -841,7 +845,13 @@ function addMessageToChat(text, sender) {
         displayText = text.substring(0, text.indexOf("|UNITY_CMD|"));
     }
 
-    bubble.textContent = displayText;
+    // ✅ السماح بـ HTML للصور فقط
+    if (displayText.includes('<img')) {
+        bubble.innerHTML = displayText;
+    } else {
+        bubble.textContent = displayText;
+    }
+
     messageWrapper.appendChild(bubble);
     chatHistoryContent.appendChild(messageWrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1253,25 +1263,43 @@ async function handleImageUpload(e) {
 async function generateImageFromText(prompt) {
     updateStatus("Generating Image...");
     try {
-        const response = await fetch(`${DESIGN_API_URL}/generate/image`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: prompt,
-                room_type: "living_room", // Default, could be extracted from prompt
-                width: 512,
-                height: 512
-            })
-        });
+        // استخدام Pollinations AI (مجاني، سريع، بدون API Key، بدون Proxy)
+        const encodedPrompt = encodeURIComponent(`interior design, ${prompt}, professional photography, 8k, detailed, high quality`);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&model=flux&nologo=true`;
 
-        if (!response.ok) throw new Error("API Error");
+        // تحميل الصورة للتأكد من أنها جاهزة
+        const img = new Image();
+        img.onload = async () => {
+            addMessageToChat(
+                `✅ Image Generated!<br><img src="${imageUrl}" class="mt-2 rounded-lg max-w-full h-auto shadow-md" alt="Generated Design">`,
+                'assistant'
+            );
+            updateStatus('&nbsp;');
 
-        const data = await response.json();
-        monitorJob(data.job_id, "image");
+            // حفظ الصورة محلياً
+            try {
+                const saveResponse = await fetch('http://localhost:5000/save-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_url: imageUrl })
+                });
+                const saveData = await saveResponse.json();
+                if (saveData.status === 'success') {
+                    console.log(`Image saved to: ${saveData.path}`);
+                    addMessageToChat(`💾 Image saved to: <br><code>${saveData.path}</code>`, 'assistant');
+                }
+            } catch (e) {
+                console.error("Failed to save image locally:", e);
+            }
+        };
+        img.onerror = () => {
+            throw new Error("Failed to load image");
+        };
+        img.src = imageUrl;
 
     } catch (error) {
         console.error(error);
-        addMessageToChat("❌ Failed to start image generation. Is the server running?", 'assistant');
+        addMessageToChat("❌ Failed to generate image. Please try again.", 'assistant');
         updateStatus('&nbsp;');
     }
 }
