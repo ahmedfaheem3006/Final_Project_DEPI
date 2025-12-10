@@ -16,7 +16,14 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
     return response
 
-HF_API_KEY = "hf_YOUR_API_KEY_HERE" # Replace with your actual key if needed
+import os
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+HF_API_KEY = os.getenv("HF_API_KEY", "") # Retrieve from environment variable
 # HF_API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5" # 410 Gone
 HF_API_URL = "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4"
 

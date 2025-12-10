@@ -220,7 +220,8 @@ const TRANSLATIONS = {
         btn_help: "🛟 المساعدة",
         btn_send: "📤 ارسال",
         btn_clear: "🗑️ مسح الكل",
-        design_btn_title: "تصميم ديكور / تحويل صورة لفيديو"
+        design_btn_title: "تصميم ديكور / تحويل صورة لفيديو",
+        sent_success: "تم الإرسال بنجاح"
     },
     en: {
         title: "Professional Voice Assistant",
@@ -249,7 +250,8 @@ const TRANSLATIONS = {
         btn_help: "🛟 Help",
         btn_send: "📤 Send",
         btn_clear: "🗑️ Clear All",
-        design_btn_title: "Generate Design / Image to Video"
+        design_btn_title: "Generate Design / Image to Video",
+        sent_success: "Successful send"
     }
 };
 
@@ -385,49 +387,49 @@ function animate() {
 }
 
 // ==========================================
-// 4. API CONFIGURATION (GEMINI & WHISPER)
+// 4. API CONFIGURATION (OPENROUTER)
 // ==========================================
-const API_KEY = CONFIG.geminiApiKey;
-const MODEL_NAME = CONFIG.geminiModel;
+const API_KEY = CONFIG.openRouterApiKey;
+// Force the working model to avoid 429/400/404 errors
+// Force the working model to avoid 429/400/404 errors
+const MODELS = [
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "google/gemini-exp-1206:free",
+    "microsoft/phi-3-medium-128k-instruct:free",
+    "meta-llama/llama-3.2-11b-vision-instruct:free"
+];
 
-// ✅ الرابط الصحيح - لاحظ استخدام : قبل generateContent
-const GENERATE_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+// OpenRouter API URL
+const GENERATE_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-console.log("✅ API URL:", GENERATE_API_URL); // للتحقق
+// console.log("✅ API URL:", GENERATE_API_URL); 
 
 function getSystemPrompt() {
-    if (currentLanguage === 'ar') {
-        return `
-أنت مساعد ذكي عام ومفيد من شركة RG.
-مهمتك:
-1. الإجابة على أي سؤال يطرحه المستخدم في أي مجال (عام، تقني، علمي، إلخ) باختصار وودية.
-2. **مهم جداً**: اتكلم بالعامية المصرية (زي: "إزيك"، "عامل إيه"، "تمام"، "ماشي"، "يعني"، "علشان"، "عايز"، "هتعمل"، إلخ).
-3. استخدم أسلوب ودود وبسيط وقريب من الناس.
-4. لديك القدرة على التحكم في محرك Unity، ولكن استخدم هذه القدرة **فقط** إذا طلب المستخدم صراحة إنشاء أو تعديل كائنات ثلاثية الأبعاد.
-5. إذا طلب المستخدم إنشاء شيء أو تغيير شيء في المشهد، أضف كود JSON في نهاية ردك.
-تنسيق JSON المطلوب:
-|UNITY_CMD|{"action": "create", "object": "cube", "color": "red"}|END_CMD|
-|UNITY_CMD|{"action": "color", "value": "blue"}|END_CMD|
+    // Smart Polyglot Prompt
+    return `
+You are a smart, helpful assistant from RG Company.
 
-أمثلة على الرد بالعامية المصرية:
-- "أهلاً! إزيك؟ عامل إيه النهارده؟"
-- "تمام، هعملك كده دلوقتي."
-- "ماشي، فهمت عليك. عايز تعمل كذا صح؟"
-- "طبعاً! ده سهل جداً، تعالى أقولك."
+**CORE RULE: LANGUAGE MIRRORING**
+- IF the user speaks **ARABIC**, you MUST reply in **ARABIC** (Egyptian Dialect).
+- IF the user speaks **ENGLISH**, you MUST reply in **ENGLISH** (Standard).
+- NEVER switch languages unless asked. Match the user's language exactly.
+
+**PERSONA (ARABIC / EGYPTIAN):**
+- Tone: Friendly, natural, and smart.
+- Style: Fluent Egyptian Dialect (Ammiya). Keep it clear.
+- Keywords: "يا صاحبي", "تمام".
+- BEHAVIOR: Act like a helpful Egyptian friend.
+
+**PERSONA (ENGLISH):**
+- Tone: Professional, concise, and helpful.
+- Style: ChatGPT-like standard assistant.
+
+**GLOBAL CAPABILITIES:**
+1. **Unity**: Control 3D objects ONLY if explicitly asked.
+2. **JSON**: Append commands at the end if needed:
+   |UNITY_CMD|{"action": "create", "object": "cube", "color": "red"}|END_CMD|
 `;
-    } else {
-        return `
-You are a helpful general-purpose smart assistant.
-Your task:
-1. Answer any question the user asks in any field (general, technical, scientific, etc.) briefly and friendly in English.
-2. You have the ability to control the Unity engine, but use this ability **ONLY** if the user explicitly asks to create or modify 3D objects.
-3. If the user asks to create or change something in the scene, add JSON code at the end of your response.
-Required JSON format:
-|UNITY_CMD|{"action": "create", "object": "cube", "color": "red"}|END_CMD|
-|UNITY_CMD|{"action": "color", "value": "blue"}|END_CMD|
-`;
-    }
 }
 
 // Speech Variables
@@ -436,8 +438,8 @@ let recognition;
 let isListening = false;
 let currentAudio = null;
 const whisperSettings = CONFIG.whisperOptions || {};
-// استخدام موديل صغير لضمان السرعة والتحميل
-const whisperModelId = "Xenova/whisper-small";
+// Use base model for better balance (configured in worker)
+const whisperModelId = "Xenova/whisper-base";
 let whisperWorker = null;
 let mediaStream = null;
 let mediaRecorder = null;
@@ -488,40 +490,51 @@ if (SpeechRecognition) {
     };
 }
 
-// B. Whisper (Transformers.js) - Loading from CDN
+// B. Whisper (Transformers.js) - Running in Web Worker
 async function initWhisper() {
     if (whisperWorker) return true;
-    try {
-        updateStatus(TRANSLATIONS[currentLanguage].whisper_loading);
 
-        // استيراد المكتبة من الرابط المحدد في Config أو الافتراضي
-        const libPath = CONFIG.transformersScriptPath || "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
-        const mod = await import(libPath);
-        const { pipeline, env } = mod;
+    updateStatus(TRANSLATIONS[currentLanguage].whisper_loading);
 
-        // إعدادات مهمة جداً لمنع خطأ 404
-        env.allowLocalModels = false; // عدم البحث في المجلدات المحلية
-        env.useBrowserCache = true;   // تخزين الموديل في المتصفح
+    return new Promise((resolve) => {
+        whisperWorker = new Worker('whisper.worker.js', { type: 'module' });
 
-        whisperWorker = await pipeline('automatic-speech-recognition', whisperModelId, {
-            dtype: 'float32', // webgpu قد يسبب مشاكل في بعض المتصفحات، float32 آمن
-            device: 'webgpu'  // حاول استخدام كرت الشاشة، سيعود لـ wasm تلقائياً إذا فشل
-        });
+        whisperWorker.onmessage = (e) => {
+            const { status, text, message } = e.data;
+            if (status === 'ready') {
+                updateStatus(TRANSLATIONS[currentLanguage].whisper_ready);
+                setTimeout(() => updateStatus('&nbsp;'), 2000);
+                resolve(true);
+            } else if (status === 'error') {
+                console.error('Whisper Worker Error:', message);
+                updateStatus(TRANSLATIONS[currentLanguage].whisper_fail);
+                resolve(false);
+            }
+        };
 
-        updateStatus(TRANSLATIONS[currentLanguage].whisper_ready);
-        setTimeout(() => updateStatus('&nbsp;'), 2000);
-        return true;
-    } catch (error) {
-        console.error('Whisper Init Error:', error);
-        updateStatus(TRANSLATIONS[currentLanguage].whisper_fail);
-        return false;
-    }
+        // CRASH RECOVERY: Handle unexpected worker termination
+        whisperWorker.onerror = (e) => {
+            console.error("⚠️ Whisper Worker Crashed (Likely OOM). Restarting...", e);
+            whisperWorker.terminate();
+            whisperWorker = null;
+            // Auto-restart
+            initWhisper().then(() => {
+                console.log("♻️ Whisper Worker recovered.");
+            });
+        };
+
+        whisperWorker.postMessage({ type: 'init' });
+    });
 }
 
 async function startWhisperRecording() {
     try {
-        const ready = await initWhisper();
-        if (!ready) return false;
+        // Ensure worker is ready BEFORE asking for mic
+        const isReady = await initWhisper();
+        if (!isReady) {
+            console.error("Whisper failed to initialize.");
+            return false;
+        }
 
         mediaStream = await navigator.mediaDevices.getUserMedia({
             audio: { channelCount: 1, sampleRate: 16000, echoCancellation: true }
@@ -573,34 +586,49 @@ async function processAudioWithWhisper(audioBlob) {
         const audioBuffer = await audioCtx.decodeAudioData(buffer);
         const audioData = audioBuffer.getChannelData(0);
 
-        const result = await whisperWorker(audioData, {
-            language: currentLanguage === 'ar' ? 'arabic' : 'english',
-            task: 'transcribe',
-            return_timestamps: false
+        // Send to Worker - No language forced, enabling auto-detect
+        whisperWorker.postMessage({
+            type: 'transcribe',
+            audio: audioData
         });
 
-        const text = result.text?.trim();
-        if (text && text.length > 1) {
-            addMessageToChat(text, 'user');
+        // Handle Response via onmessage (simple implementation)
+        // Note: For concurrent requests, use a request ID mapping, but here we process one at a time.
+        const originalOnMessage = whisperWorker.onmessage; // Backup init listener
 
-            // Check LocalBot first
-            const localResponse = LocalBot.process(text);
-            if (localResponse) {
-                updateStatus(TRANSLATIONS[currentLanguage].thinking);
-                setTimeout(async () => {
-                    addMessageToChat(localResponse, 'assistant');
-                    await speakWithGeminiTTS(localResponse);
-                    updateStatus('&nbsp;');
-                }, 500);
-            } else {
-                getAIResponse(text);
+        whisperWorker.onmessage = (e) => {
+            const { status, text, message } = e.data;
+
+            if (status === 'complete') {
+                const cleanText = text?.trim();
+                if (cleanText && cleanText.length > 1) {
+                    addMessageToChat(cleanText, 'user');
+
+                    // Check LocalBot
+                    const localResponse = LocalBot.process(cleanText);
+                    if (localResponse) {
+                        updateStatus(TRANSLATIONS[currentLanguage].thinking);
+                        setTimeout(async () => {
+                            addMessageToChat(localResponse, 'assistant');
+                            await speakWithGeminiTTS(localResponse);
+                            updateStatus('&nbsp;');
+                        }, 500);
+                    } else {
+                        getAIResponse(cleanText);
+                    }
+                } else {
+                    updateStatus(TRANSLATIONS[currentLanguage].no_speech);
+                    setTimeout(() => updateStatus('&nbsp;'), 2000);
+                }
+                // Restore listener or keep it? Checking 'ready' again isn't needed but safest is to just keep this one.
+            } else if (status === 'error') {
+                console.error("Whisper Process Error:", message);
+                updateStatus(TRANSLATIONS[currentLanguage].error);
             }
-        } else {
-            updateStatus(TRANSLATIONS[currentLanguage].no_speech);
-            setTimeout(() => updateStatus('&nbsp;'), 2000);
-        }
+        };
+
     } catch (error) {
-        console.error("Whisper Process Error:", error);
+        console.error("Whisper Setup Error:", error);
         updateStatus(TRANSLATIONS[currentLanguage].error);
     }
 }
@@ -619,7 +647,7 @@ function cleanupMediaStream() {
 function setInputsDisabled(disabled) { allInputs.forEach(input => input.disabled = disabled); }
 
 micButton.addEventListener('click', async () => {
-    // إيقاف أي صوت حالي
+    // Stop current audio
     if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
     isSpeaking3D = false;
 
@@ -629,9 +657,9 @@ micButton.addEventListener('click', async () => {
         return;
     }
 
-    // محاولة تشغيل Whisper أولاً
+    // Try Whisper first
     const started = await startWhisperRecording();
-    // إذا فشل Whisper، استخدم Web Speech
+    // If Whisper fails, use Web Speech
     if (!started && recognition) recognition.start();
 });
 
@@ -664,136 +692,158 @@ function handleTextInput() {
     }
 }
 
-// Main AI Handler
-// Main AI Handler
+// Main AI Handler (OpenRouter with Fallback)
 async function getAIResponse(prompt) {
     updateStatus(TRANSLATIONS[currentLanguage].thinking);
     setInputsDisabled(true);
     isListening = false;
 
-    try {
-        console.log("🔄 جاري الإرسال إلى Gemini...");
-        console.log("API_KEY:", API_KEY ? "موجود ✅" : "غير موجود ❌");
-        console.log("URL:", GENERATE_API_URL);
+    // 0. CHECK INTERNET CONNECTION
+    if (!navigator.onLine) {
+        const errText = currentLanguage === 'ar' ? "⚠️ لا يوجد اتصال بالإنترنت." : "⚠️ No Internet Connection.";
+        addMessageToChat(errText, 'assistant');
+        setInputsDisabled(false);
+        updateStatus('&nbsp;');
+        return;
+    }
 
-        const response = await fetch(GENERATE_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: prompt }]
-                }],
-                systemInstruction: {
-                    parts: [{ text: getSystemPrompt() }]
+    let lastError = null;
+
+    // Try models in sequence
+    for (const model of MODELS) {
+        try {
+            console.log(`🔄 Trying model: ${model}...`);
+
+            const response = await fetch(GENERATE_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${API_KEY}`,
+                    'HTTP-Referer': window.location.href, // Site URL
+                    'X-Title': 'RG Chatbot', // Site Title
+                    'Content-Type': 'application/json'
                 },
-                generationConfig: {
-                    temperature: 0.7,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 1024,
+                body: JSON.stringify({
+                    model: model,
+                    messages: [
+                        {
+                            role: "system",
+                            content: getSystemPrompt()
+                        },
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+                    temperature: 0.6,
+                    top_p: 0.9
+                })
+            });
+
+            console.log(`📊 Status (${model}):`, response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.warn(`⚠️ Model ${model} failed:`, errorData);
+
+                // If it's a rate limit (429) or invalid model (400 or 404), continue to next model
+                if (response.status === 429 || response.status === 400 || response.status === 404) {
+                    lastError = errorData;
+                    continue;
                 }
-            })
-        });
 
-        console.log("📊 حالة الاستجابة:", response.status);
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("❌ Error Response:", errorData);
-
-            if (response.status === 404) {
-                throw new Error("خطأ 404: تحقق من رابط API أو المفتاح");
-            } else if (response.status === 401) {
-                throw new Error("خطأ 401: مفتاح API غير صحيح أو منتهي الصلاحية");
-            } else if (response.status === 400) {
-                throw new Error("خطأ 400: طلب غير صحيح - تحقق من البيانات");
+                throw new Error(`OpenRouter Error: ${errorData.error?.message || response.statusText}`);
             }
 
-            throw new Error(`HTTP Error ${response.status}`);
+            const result = await response.json();
+            console.log(`✅ Success with ${model}:`, result);
+
+            const text = result.choices?.[0]?.message?.content;
+
+            if (text) {
+                addMessageToChat(text, 'assistant');
+
+                // >>> Send Command to UNITY <<<
+                console.log("Sending to Unity Bridge:", text);
+                socket.emit("ai_response", text);
+
+                await speakWithGeminiTTS(text);
+                setInputsDisabled(false); // Fix: Re-enable inputs on success
+                return; // Exit function on success
+            } else {
+                console.error("❌ API Response Missing Content. Full Result:", JSON.stringify(result, null, 2));
+                throw new Error("No response content from API");
+            }
+
+        } catch (error) {
+            console.error(`❌ Error with ${model}:`, error.message);
+            lastError = error;
+
+            // Check for network errors
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                addMessageToChat(currentLanguage === 'ar' ? "⚠️ مشكلة في الاتصال بالشبكة (DNS/Internet)." : "⚠️ Network/DNS Error.", 'assistant');
+                break; // Stop trying other models if internet is down
+            }
+            // Continue to next model
         }
+    }
 
-        const result = await response.json();
-        console.log("✅ API Response:", result);
-
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (text) {
-            addMessageToChat(text, 'assistant');
-
-            // >>> إرسال الأمر إلى UNITY <<<
-            console.log("Sending to Unity Bridge:", text);
-            socket.emit("ai_response", text);
-
-            await speakWithGeminiTTS(text);
-        } else {
-            throw new Error("لا توجد استجابة من API");
-        }
-    } catch (error) {
-        console.error("❌ Gemini API Error:", error.message);
-        addMessageToChat(`خطأ: ${error.message}`, 'assistant');
-    } finally {
+    // If loop finishes without success (checking lastError)
+    if (lastError) {
+        console.error("❌ All models failed.");
+        addMessageToChat(`Error: All models failed. Last error: ${lastError?.message || 'Unknown'}`, 'assistant');
         setInputsDisabled(false);
         updateStatus('&nbsp;');
     }
 }
 
-// TTS Handler - Web Speech API with Best Male Voice
+// TTS Handler - Web Speech API with Dynamic Language Detection
 async function speakWithGeminiTTS(text) {
     updateStatus(TRANSLATIONS[currentLanguage].speaking);
+
     try {
-        // تنظيف النص من أكواد Unity
         let speechText = text;
-        if (speechText.includes("|UNITY_CMD|")) {
+
+        // Remove Unity Commands
+        const hasUnityCmd = speechText.includes("|UNITY_CMD|");
+        if (hasUnityCmd) {
             speechText = speechText.substring(0, text.indexOf("|UNITY_CMD|")).trim();
         }
+
         if (!speechText) {
-            isSpeaking3D = false;
-            return;
+            if (hasUnityCmd) {
+                // Speak confirmation if it was a command
+                speechText = TRANSLATIONS[currentLanguage].sent_success;
+            } else {
+                // Just empty??
+                isSpeaking3D = false;
+                updateStatus('&nbsp;');
+                return;
+            }
         }
 
-        // ✅ استخدام Web Speech API مع صوت سعودي
         if ('speechSynthesis' in window) {
-            // إيقاف أي كلام سابق
-            speechSynthesis.cancel();
+            speechSynthesis.cancel(); // Stop previous speech
 
             const utterance = new SpeechSynthesisUtterance(speechText);
 
-            // إعدادات الصوت
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+            // DYNAMIC DEVICE SELECTION: Detect language from TEXT
+            const isArabicText = /[\u0600-\u06FF]/.test(speechText);
 
-            // اختيار صوت سعودي
-            const voices = speechSynthesis.getVoices();
-
-            if (currentLanguage === 'ar') {
-                utterance.lang = 'ar-SA'; // سعودي (الأصلي)
-
-                // البحث عن صوت سعودي
-                const saudiVoice = voices.find(v =>
-                    v.lang === 'ar-SA'
-                ) || voices.find(v =>
-                    v.lang.startsWith('ar-')
-                );
-
-                if (saudiVoice) {
-                    utterance.voice = saudiVoice;
-                    console.log('🎤 Selected Voice:', saudiVoice.name, '| Lang:', saudiVoice.lang);
-                }
+            if (isArabicText) {
+                // Force Arabic Voice
+                utterance.lang = 'ar-SA';
+                const arVoice = window.speechSynthesis.getVoices().find(v => v.lang.includes('ar'));
+                if (arVoice) utterance.voice = arVoice;
             } else {
+                // Force English Voice
                 utterance.lang = 'en-US';
-
-                const englishVoice = voices.find(v =>
-                    v.lang.startsWith('en-')
-                );
-
-                if (englishVoice) {
-                    utterance.voice = englishVoice;
-                    console.log('🎤 Selected Voice:', englishVoice.name);
-                }
+                const enVoice = window.speechSynthesis.getVoices().find(v => v.lang.includes('en') && !v.lang.includes('ar'));
+                if (enVoice) utterance.voice = enVoice;
             }
+
+            // Adjust properties
+            utterance.pitch = 1.0;
+            utterance.rate = 1.0;
 
             utterance.onstart = () => {
                 updateStatus(TRANSLATIONS[currentLanguage].speaking);
@@ -822,7 +872,6 @@ async function speakWithGeminiTTS(text) {
         updateStatus('&nbsp;');
     }
 }
-
 // ==========================================
 // 7. HELPERS
 // ==========================================
@@ -841,8 +890,15 @@ function addMessageToChat(text, sender) {
 
     // إخفاء الأوامر من الشات
     let displayText = text;
-    if (sender === 'assistant' && text.includes("|UNITY_CMD|")) {
+    const hasUnityCmd = text.includes("|UNITY_CMD|");
+
+    if (sender === 'assistant' && hasUnityCmd) {
         displayText = text.substring(0, text.indexOf("|UNITY_CMD|"));
+    }
+
+    // If pure command, show confirmation
+    if (sender === 'assistant' && hasUnityCmd && !displayText.trim()) {
+        displayText = TRANSLATIONS[currentLanguage].sent_success;
     }
 
     // ✅ السماح بـ HTML للصور فقط
@@ -1382,3 +1438,6 @@ if (newChatBtn) {
         }
     });
 }
+
+// FORCE UI SYNC ON LOAD
+updateLanguageUI();

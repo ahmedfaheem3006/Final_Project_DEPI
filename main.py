@@ -24,6 +24,13 @@ except ImportError:
 # ================================
 # تهيئة OpenAI API
 # ================================
+# تحميل متغيرات البيئة من ملف .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not installed. Install with: pip install python-dotenv")
+
 # يمكن للمستخدم تعيين مفتاح API إما من متغير البيئة أو من هنا مباشرة
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")  # Set your OpenAI API key here
 

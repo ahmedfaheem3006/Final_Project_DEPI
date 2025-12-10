@@ -1,0 +1,9 @@
+config.js
+generated_images/
+tts_output/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+node_modules/
+Interior-Design-Video-Generator-main/
